@@ -1,10 +1,10 @@
-# Platform GitOps lab (PML-shaped, Kind)
+# Platform GitOps (Argo CD + Helm on Kind)
 
-Single-tenant GitOps monorepo modeled on `pml-argocd` / `mfv2/`:
+Single-tenant GitOps monorepo structured like `pml-argocd` / `mfv2/`:
 
 ```
 docs/                         # shared docs
-apps/                         # demo sources (stand-in for product repos)
+apps/                         # application sources
 platform/                     # ← THE TENANT
   argocd-deployable/          # apply-once roots
   bootstrapping_{nonprod,prod}/

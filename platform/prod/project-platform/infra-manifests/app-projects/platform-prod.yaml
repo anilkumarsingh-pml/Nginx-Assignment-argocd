@@ -9,7 +9,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
-  description: Single-tenant prod platform (Kind lab)
+  description: Single-tenant prod platform
   sourceRepos:
     - https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
   destinations:

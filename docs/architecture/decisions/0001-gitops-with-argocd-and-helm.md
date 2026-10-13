@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Mirror PML delivery: desired state in Git, continuous reconciliation, env separation.
+Desired state in Git, continuous reconciliation, and clear separation between nonprod and prod.
 
 ## Decision
 

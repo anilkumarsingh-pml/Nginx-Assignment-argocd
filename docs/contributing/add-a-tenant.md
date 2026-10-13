@@ -1,7 +1,7 @@
 # Add a tenant
 
-This lab keeps **one tenant** (`platform/`) on purpose.
+This repository keeps **one tenant** (`platform/`) by design.
 
-PML hosts multiple tenants under one repo (e.g. `mfv2/`). Adding a second tenant here would mean a sibling folder with its own `argocd-deployable`, `bootstrapping_*`, and `prod|nonprod/project-*` trees — plus new AppProjects.
+PML hosts multiple tenants under one repo (e.g. `mfv2/`). Adding a second tenant here means a sibling folder with its own `argocd-deployable`, `bootstrapping_*`, and `prod|nonprod/project-*` trees — plus new AppProjects.
 
-Do that only if a human explicitly asks for multi-tenant practice; otherwise extend apps inside `platform/`.
+Prefer extending applications inside `platform/` unless multi-tenant isolation is explicitly required.

@@ -14,4 +14,4 @@ Nonprod and prod need parallel platform entrypoints with different scale.
 
 ## Consequences
 
-Clear parity with PML bootstrap naming. One tenant only.
+Env bootstrap naming stays aligned with PML. One tenant only.

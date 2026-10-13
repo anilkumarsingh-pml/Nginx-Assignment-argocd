@@ -1,6 +1,6 @@
 # platform — the tenant
 
-Single-tenant GitOps tree (lab analogue of PML `mfv2/`).
+Single-tenant GitOps tree (same role as PML `mfv2/`).
 
 ```
 platform/
@@ -18,4 +18,4 @@ platform/
 
 Flow: root → bootstrap `deployments[]` → AppProjects + apps App-of-Apps → storefront / checkout-api / admin-console.
 
-Demo app **sources** live at repo-root `apps/` (stand-in for separate product repos).
+Application sources live at repo-root `apps/`.

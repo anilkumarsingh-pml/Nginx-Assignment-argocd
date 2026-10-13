@@ -1,12 +1,12 @@
 # AGENTS.md — working in this repo
 
-Learning GitOps monorepo shaped like PML `pml-argocd`: shared `docs/`, one tenant folder `platform/` (analogue of `mfv2/`), Helm-generated Applications, dual Kind clusters.
+GitOps monorepo aligned with PML `pml-argocd`: shared `docs/`, one tenant folder `platform/` (same role as `mfv2/`), Helm-generated Applications, dual Kind clusters for nonprod and prod.
 
 ## Repo map
 
 | Path | Purpose |
 |------|---------|
-| `apps/` | Demo app sources (stand-in for separate product repos) |
+| `apps/` | Application sources (`storefront`, `checkout-api`, `admin-console`) |
 | `platform/` | **The tenant** — deployable roots, bootstrap, env trees |
 | `platform/argocd-deployable/` | Apply-once root Applications (nonprod/prod overlays) |
 | `platform/bootstrapping_nonprod/` | Root Helm: generates layer Applications |
@@ -33,7 +33,7 @@ Do not put this project's workloads on an unrelated `dev-cluster`.
 
 - Onboard a new app: add `apps/<name>/`, `values-<name>.yaml` under `app-helm-chart/webapp`, and an entry under `applications:` in **both** `platform/*/project-platform/app-of-apps/values.yaml` files.
 - Run `helm lint` / `helm template` on bootstrap + app-of-apps + webapp charts before pushing.
-- Load images into each Kind cluster (`kind load` or `docker save \| ctr import`). No registry in this lab.
+- Load images into each Kind cluster (`kind load` or `docker save \| ctr import`). There is no container registry in this environment.
 - Bootstrap **both** env clusters for prod parity.
 
 ## Do not
@@ -54,4 +54,4 @@ Details: [docs/onboarding/getting-started.md](docs/onboarding/getting-started.md
 
 ## Agent behavior
 
-Explain why each GitOps/Helm layer exists (PML parity). Prefer small, reviewable changes. Keep app HTML stable unless asked to change it.
+Explain why each GitOps/Helm layer exists. Prefer small, reviewable changes. Keep app HTML stable unless asked to change it.

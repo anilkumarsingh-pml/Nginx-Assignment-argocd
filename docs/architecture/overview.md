@@ -1,11 +1,11 @@
 # Architecture overview
 
-## Layout (PML-shaped)
+## Layout
 
 ```
 GitHub
 ├── docs/                          # shared
-├── apps/                          # demo sources (≠ product repos, but same role)
+├── apps/                          # application sources
 └── platform/                      # tenant (≈ mfv2/)
     ├── argocd-deployable/overlays/{nonprod,prod}/root_app/
     ├── bootstrapping_{nonprod,prod}/    # deployments[] → layer Applications
@@ -43,12 +43,12 @@ bootstrapping_*  (Helm)
 
 Each cluster runs its own Argo CD (two UIs when port-forwarded).
 
-## vs PML `mfv2/`
+## Mapping to PML `mfv2/`
 
-| PML | This lab |
-|-----|----------|
+| PML | This repository |
+|-----|-----------------|
 | `mfv2/` tenant | `platform/` |
 | Full `argocd-deployable` Kustomize install | Roots only; Argo installed from upstream |
-| infra-app-of-apps + large infra-manifests | AppProjects only under infra-manifests |
-| prod-app-of-apps + Kafka charts | app-of-apps → three webapps |
+| infra-app-of-apps + large infra-manifests | AppProjects under infra-manifests |
+| prod-app-of-apps + middleware charts | app-of-apps → three webapps |
 | Many AppProjects / cross-repos | One AppProject per env, one repo |
