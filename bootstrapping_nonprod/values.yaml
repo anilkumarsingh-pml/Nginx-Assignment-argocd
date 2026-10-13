@@ -1,25 +1,36 @@
-# Nonprod bootstrap defaults (Kind / learning).
+# Single-tenant nonprod platform bootstrap.
+# Add an entry under `applications` to onboard a new app (Helm renders the Application CR).
 
 repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+targetRevision: HEAD
+environment: nonprod
 
 appProject:
-  name: learning-nonprod
-  description: Learning project for multi-app GitOps on Kind (nonprod)
-  destinations:
-    - namespace: nginx-app
-      server: https://kubernetes.default.svc
-    - namespace: catalog-ui
-      server: https://kubernetes.default.svc
-    - namespace: payments-api
-      server: https://kubernetes.default.svc
-    - namespace: ops-portal
-      server: https://kubernetes.default.svc
+  name: platform-nonprod
+  description: Single-tenant nonprod platform (Kind)
+  # Bootstrap Application uses project default; workloads use this project.
+  # Include argocd so Application CRs can land in the argocd namespace.
+  extraDestinations:
     - namespace: argocd
       server: https://kubernetes.default.svc
 
-# Namespaces created before child Applications sync (wave 0).
-namespaces:
-  - name: nginx-app
-  - name: catalog-ui
-  - name: payments-api
-  - name: ops-portal
+# Workloads onboarded via Helm-generated Application objects.
+applications:
+  - name: storefront
+    namespace: storefront
+    chartPath: charts/webapp
+    valueFiles:
+      - values-storefront.yaml
+      - values-nonprod.yaml
+  - name: checkout-api
+    namespace: checkout-api
+    chartPath: charts/webapp
+    valueFiles:
+      - values-checkout-api.yaml
+      - values-nonprod.yaml
+  - name: admin-console
+    namespace: admin-console
+    chartPath: charts/webapp
+    valueFiles:
+      - values-admin-console.yaml
+      - values-nonprod.yaml

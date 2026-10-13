@@ -1,0 +1,5 @@
+fullnameOverride: storefront
+appLabel: storefront
+image:
+  repository: storefront
+  tag: v1

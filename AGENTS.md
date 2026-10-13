@@ -1,51 +1,58 @@
 # AGENTS.md — working in this repo
 
-This repository is a **learning GitOps monorepo** for a DevOps intern: NGINX app source, Helm charts (app + environment bootstrap), and Argo CD manifests live together so you can see the full path from code → chart → Git → cluster.
+Learning GitOps monorepo: multi-app sources, a shared Helm chart, environment bootstrap charts that **Helm-generate Argo CD Applications**, and thin App-of-Apps roots for Kind nonprod + prod.
 
 ## Repo map
 
 | Path | Purpose |
 |------|---------|
-| `app/` | Application source (HTML + Dockerfile) |
-| `charts/nginx-app/` | Application Helm chart (Deployment + Service) |
-| `bootstrapping_nonprod/` | Nonprod bootstrap Helm chart (AppProject + Namespace) |
-| `bootstrapping_prod/` | Prod bootstrap Helm chart (learning stub / env parity) |
-| `argocd/nonprod/` | Nonprod App-of-Apps + Applications (Kind lab) |
-| `argocd/prod/` | Prod App-of-Apps + Applications (do not apply on Kind by default) |
+| `apps/` | Application sources (`storefront`, `checkout-api`, `admin-console`) |
+| `charts/webapp/` | Shared Deployment + Service chart + per-app / env values |
+| `bootstrapping_nonprod/` | Nonprod bootstrap: AppProject + namespaces + Application CRs |
+| `bootstrapping_prod/` | Prod bootstrap (same pattern, prod values) |
+| `argocd/nonprod/app-of-apps/` | Root Application for `non-prod-cluster` |
+| `argocd/prod/app-of-apps/` | Root Application for `prod-cluster` |
 | `docs/` | Architecture, onboarding, ADRs |
-| `REPORT.md` | Earlier Kind assignment write-up (history) |
+| `scripts/` | Lab helpers (image transfer, cluster bootstrap) |
+
+## Kind clusters
+
+| Cluster | Role |
+|---------|------|
+| `non-prod-cluster` | Nonprod Argo CD + apps |
+| `prod-cluster` | Prod Argo CD + apps |
+
+Do not put this project's workloads on an unrelated `dev-cluster`.
 
 ## Source of truth
 
-- **Git is the source of truth** for desired cluster state (charts + Argo manifests).
-- Prefer changing charts or `argocd/` and pushing, then let Argo CD sync.
-- Do **not** treat `kubectl edit` / imperative cluster tweaks as permanent configuration (`selfHeal` will revert drift).
+- Git is the source of truth. Change charts / bootstrap values / roots, push, let Argo sync.
+- Do not treat `kubectl edit` as permanent (`selfHeal` reverts drift).
 
 ## Do
 
-- Run `helm template` / `helm lint` locally before pushing chart changes (when Helm is installed).
-- Use `values-nonprod.yaml` / `values-prod.yaml` for env overrides; keep templates generic.
-- Load images into Kind with `kind load docker-image` (no registry in this lab).
-- Document decisions in `docs/adr/` when you change approach.
-- On Kind, bootstrap **nonprod** only unless a human asks for prod parity testing.
+- Onboard a new app by adding `apps/<name>/`, a `values-<name>.yaml` under `charts/webapp/`, and an entry under `applications:` in **both** bootstrap `values.yaml` files.
+- Run `helm lint` / `helm template` on bootstrap + webapp charts before pushing.
+- Load images into each Kind cluster (`kind load` or `scripts/transfer-images.sh`); there is no registry in this lab.
+- Bootstrap **both** env clusters when demonstrating prod parity.
 
 ## Do not
 
 - Commit secrets, tokens, kubeconfigs, or `.certs/`.
-- Reinstall or modify the Argo CD installation in namespace `argocd` unless a human explicitly asks.
-- Invent health probes, env vars, or registry credentials that the app does not use.
-- Point Argo CD at a different `repoURL` without updating all Application manifests consistently.
-- Apply `argocd/prod/app-of-apps/root.yaml` on the Kind `dev-cluster` (prod stays Git-only structure for this lab).
+- Hand-write one Application YAML per app under `argocd/*/applications/` — bootstrap Helm owns that.
+- Point Argo CD at a different `repoURL` without updating roots + both bootstrap values consistently.
 
-## Bootstrap order (humans + agents)
+## Bootstrap order
 
-1. Push this repo to GitHub: `https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git`
-2. Build and `kind load` `nginx-app:v1` into `dev-cluster`
-3. `kubectl apply -f argocd/nonprod/app-of-apps/root.yaml`
-4. Verify Applications Synced/Healthy (`bootstrapping-nonprod`, plus workload apps) and port-forward a Service
+1. Push to `https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git`
+2. Build app images; `kind load` into `non-prod-cluster` and `prod-cluster`
+3. Install Argo CD in both clusters (load quay/ghcr images if pulls fail)
+4. `kubectl --context kind-non-prod-cluster apply -f argocd/nonprod/app-of-apps/root.yaml`
+5. `kubectl --context kind-prod-cluster apply -f argocd/prod/app-of-apps/root.yaml`
+6. Port-forward Argo CD and verify Applications Synced/Healthy
 
 Details: [docs/onboarding/local-kind-gitops.md](docs/onboarding/local-kind-gitops.md)
 
 ## Agent behavior
 
-When helping in this repo, explain **why** each GitOps/Helm piece exists (learning goal). Prefer small, reviewable changes. Keep the NGINX app behavior identical unless asked to change it.
+Explain why each GitOps/Helm piece exists. Prefer small, reviewable changes. Keep app HTML/behavior stable unless asked to change it.

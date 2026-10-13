@@ -1,0 +1,5 @@
+fullnameOverride: admin-console
+appLabel: admin-console
+image:
+  repository: admin-console
+  tag: v1

@@ -1,96 +1,73 @@
-# Onboarding: local Kind GitOps
+# Local Kind GitOps onboarding
 
 ## Prerequisites
 
-- Docker / Colima running
-- Kind cluster named `dev-cluster` (kubectl context `kind-dev-cluster`)
-- Argo CD already installed in namespace `argocd`
-- `kubectl` on your `PATH`
-- Access to push to [Nginx-Assignment-argocd](https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd)
+- Colima (or Docker Desktop) with enough RAM for **two** Kind clusters (~8 GiB recommended)
+- `kind`, `kubectl`, `helm`, `docker`
+- This repo pushed to `https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git`
 
-Optional: install Helm CLI to lint/template charts locally.
-
-## 1. Clone / use this repo
+## Clusters
 
 ```bash
-cd /path/to/Nginx-K8s-Deployment-Assignment
-git remote -v   # should include origin → Nginx-Assignment-argocd.git
+kind create cluster --name non-prod-cluster
+kind create cluster --name prod-cluster
 ```
 
-## 2. Build the image and load into Kind
+If a third cluster fails to start while others are running, stop one control-plane container, create the new cluster, then start the stopped node again.
 
-There is **no container registry** in this lab. Kind only sees images you load:
+## Images (no registry)
 
 ```bash
-docker build --build-arg VERSION=v1 -t nginx-app:v1 app/
-kind load docker-image nginx-app:v1 --name dev-cluster
+for app in storefront checkout-api admin-console; do
+  docker build -t ${app}:v1 "apps/${app}"
+  kind load docker-image ${app}:v1 --name non-prod-cluster
+  kind load docker-image ${app}:v1 --name prod-cluster
+done
+
+# Argo CD images (load into both if quay/ghcr pulls fail inside Kind)
+./scripts/load-argocd-images.sh non-prod-cluster
+./scripts/load-argocd-images.sh prod-cluster
 ```
 
-## 3. Push Git (Argo CD reads GitHub, not your laptop disk)
+To copy an image already present on one Kind node to another:
 
 ```bash
-git add .
-git commit -m "Describe your change"
-git push -u origin HEAD
+./scripts/transfer-images.sh non-prod-cluster prod-cluster storefront:v1
 ```
 
-If the repository is **private**, register credentials in Argo CD before sync will work:
+## Install Argo CD
 
 ```bash
-kubectl -n argocd create secret generic repo-nginx-assignment-argocd \
-  --from-literal=type=git \
-  --from-literal=url=https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git \
-  --from-literal=username='YOUR_GITHUB_USER' \
-  --from-literal=password='YOUR_GITHUB_PAT' \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-kubectl -n argocd label secret repo-nginx-assignment-argocd \
-  argocd.argoproj.io/secret-type=repository
+./scripts/install-argocd.sh kind-non-prod-cluster
+./scripts/install-argocd.sh kind-prod-cluster
 ```
 
-Do **not** commit the PAT into this repo.
-
-## 4. Bootstrap App-of-Apps
+Initial admin password:
 
 ```bash
-kubectl config use-context kind-dev-cluster
-kubectl apply -f argocd/nonprod/app-of-apps/root.yaml
+kubectl --context kind-non-prod-cluster -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath='{.data.password}' | base64 -d; echo
 ```
 
-This creates Application `nginx-gitops-root`, which syncs child Applications:
-
-- `bootstrapping-nonprod` → Helm `bootstrapping_nonprod/` (AppProject + Namespace)
-- `nginx-app` → Helm `charts/nginx-app` + `values-nonprod.yaml`
-
-Prod parity exists under `argocd/prod/` + `bootstrapping_prod/` but is **not** applied in the Kind lab by default.
-
-## 5. Verify
+## Bootstrap apps
 
 ```bash
-kubectl -n argocd get applications
-kubectl -n argocd get appprojects
-kubectl -n nginx-app get deploy,pods,svc -o wide
-
-kubectl -n nginx-app port-forward svc/nginx-app 8080:80
-# Open http://localhost:8080 → "NGINX Application — Version 1"
+kubectl --context kind-non-prod-cluster apply -f argocd/nonprod/app-of-apps/root.yaml
+kubectl --context kind-prod-cluster apply -f argocd/prod/app-of-apps/root.yaml
 ```
 
-## 6. Practice a GitOps change
+Watch:
 
 ```bash
-# Edit charts/nginx-app/values-nonprod.yaml → replicaCount: 3
-git commit -am "Scale nonprod to 3 replicas"
-git push
-# Watch Argo self-heal / sync
-kubectl -n argocd get application nginx-app -w
-kubectl -n nginx-app get pods -w
+kubectl --context kind-non-prod-cluster -n argocd get applications
+kubectl --context kind-prod-cluster -n argocd get applications
 ```
 
-## Troubleshooting
+## Argo CD UI
 
-| Symptom | Likely cause | Fix |
-|---------|--------------|-----|
-| Application `Unknown` / repo error | Private repo / bad URL | Add repo secret; check `repoURL` |
-| `ImagePullBackOff` | Image not on Kind node | Re-run `kind load` |
-| Drift comes back | `selfHeal: true` | Change Git, not only the live cluster |
-| Empty `nginx-app` namespace | Child app not synced | `kubectl -n argocd describe application nginx-app` |
+```bash
+kubectl --context kind-non-prod-cluster -n argocd port-forward svc/argocd-server 8080:443
+# open https://localhost:8080  (user: admin)
+```
+
+Use another local port (e.g. `8081`) for prod simultaneously.

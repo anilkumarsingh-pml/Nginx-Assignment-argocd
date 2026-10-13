@@ -1,0 +1,4 @@
+# Prod env overlay (higher replica count for parity demos).
+replicaCount: 2
+image:
+  pullPolicy: IfNotPresent

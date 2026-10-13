@@ -5,8 +5,8 @@ metadata:
   namespace: argocd
   labels:
     app.kubernetes.io/name: {{ include "bootstrapping-prod.name" . }}
-    app.kubernetes.io/part-of: nginx-gitops
-    environment: prod
+    app.kubernetes.io/part-of: platform-gitops
+    environment: {{ .Values.environment }}
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
@@ -14,7 +14,13 @@ spec:
   sourceRepos:
     - {{ .Values.repoURL | quote }}
   destinations:
-    {{- toYaml .Values.appProject.destinations | nindent 4 }}
+    {{- range .Values.applications }}
+    - namespace: {{ .namespace }}
+      server: https://kubernetes.default.svc
+    {{- end }}
+    {{- with .Values.appProject.extraDestinations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace

@@ -1,52 +1,30 @@
 # Architecture overview
 
-## Goal
-
-Deploy the NGINX learning app to a local Kind cluster (`dev-cluster`) using **Helm** (package the app) and **Argo CD** (sync Git → cluster), without changing how Argo CD itself is installed.
-
-## Components
-
-```text
-GitHub (Nginx-Assignment-argocd)
+```
+GitHub (source of truth)
         │
-        ▼
-┌───────────────────┐     syncs      ┌─────────────────────────────┐
-│ nginx-gitops-root │ ─────────────► │ Applications:              │
-│ (App-of-Apps)     │                │  bootstrapping-nonprod     │
-└───────────────────┘                │  nginx-app                 │
-                                     └─────────┬───────────────────┘
-                    wave 0                     │            wave 1
-                                               ▼
-                          ┌────────────────────────┐   ┌─────────────────────────────┐
-                          │ bootstrapping_nonprod  │   │ charts/nginx-app (x4 apps)  │
-                          │ → AppProject           │   │ nginx-app / catalog-ui /    │
-                          │ → Namespaces (x4)      │   │ payments-api / ops-portal   │
-                          └────────────────────────┘   └─────────────────────────────┘
+        ├─ argocd/*/app-of-apps/root.yaml   ← applied once per cluster
+        │         │
+        │         ▼
+        ├─ bootstrapping_{nonprod|prod}/    ← Helm chart
+        │         │  renders:
+        │         ├─ AppProject (one tenant)
+        │         ├─ Namespaces
+        │         └─ Application CRs (one per app)
+        │                   │
+        │                   ▼
+        └─ charts/webapp + apps/*           ← workload Deployments/Services
 ```
 
-Each child Application is a separate Argo CD app (own sync/health/history), which is how multi-service platforms feel in the UI.
+## Clusters
 
+| Kind cluster | Root Application | Bootstrap chart | AppProject |
+|--------------|------------------|-----------------|------------|
+| `non-prod-cluster` | `root-nonprod` | `bootstrapping_nonprod` | `platform-nonprod` |
+| `prod-cluster` | `root-prod` | `bootstrapping_prod` | `platform-prod` |
 
-1. **`app/`** — immutable container image content (HTML served by NGINX).
-2. **`bootstrapping_nonprod/`** (and stub `bootstrapping_prod/`) — environment Helm charts (AppProject + Namespace) that run **before** app charts.
-3. **`charts/nginx-app`** — application Helm chart (Deployment + Service).
-4. **`argocd/nonprod`** — App-of-Apps + Applications for Kind; **`argocd/prod`** mirrors the pattern for learning.
-5. **Kind node** — must already have `nginx-app:v1` via `kind load` (`IfNotPresent`).
+Each cluster runs its own Argo CD. There is no shared control plane between envs (closer to real prod/nonprod separation).
 
-## Why this shape (inspired by larger platforms)
+## Why Helm generates Applications
 
-Production repos (e.g. multi-service GitOps layouts) often separate:
-
-- Helm/charts or deployable manifests
-- Environment folders (`nonprod` / `prod`)
-- App-of-Apps to bootstrap many Applications
-- AppProjects for multi-team guardrails
-
-This lab keeps **one app** and **one environment (`nonprod`)** so you learn the same patterns without the noise of dozens of microservices.
-
-## Data flow for a change
-
-1. Edit `charts/nginx-app/values-nonprod.yaml` (e.g. `replicaCount: 3`).
-2. Commit and push to GitHub.
-3. Argo CD detects Git change → syncs Helm release.
-4. Deployment rolls out; Service keeps a stable entrypoint.
+Hand-maintaining one YAML per app does not scale. Listing apps in bootstrap `values.yaml` and templating `Application` objects matches how platform teams onboard services: change values → Git → sync → new Application appears.

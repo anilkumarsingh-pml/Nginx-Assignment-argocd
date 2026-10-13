@@ -1,108 +1,51 @@
-# NGINX Assignment — Argo CD + Helm (Kind)
+# Platform GitOps lab (Argo CD + Helm on Kind)
 
-Learning GitOps repo for the DevOps training track:
+Multi-app monorepo demonstrating production-style GitOps:
 
-1. Study **Helm**
-2. Keep **app + Argo CD** config in one Git repo
-3. Install the app with **Argo CD + Helm** on Kind (`dev-cluster`)
+- **Two Kind clusters**: `non-prod-cluster` and `prod-cluster`
+- **One tenant** per env (`platform-nonprod` / `platform-prod` AppProjects)
+- **Bootstrap Helm charts** generate Argo CD `Application` objects for every app
+- Shared **`charts/webapp`** chart with per-app and per-env values
 
-Remote: [anilkumarsingh-pml/Nginx-Assignment-argocd](https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd)
+## Apps
 
-Inspired by multi-env layouts (`bootstrapping_nonprod` / `bootstrapping_prod` + App-of-Apps), with **one app** and Kind focused on **nonprod**.
+| App | Image | Namespace |
+|-----|-------|-----------|
+| storefront | `storefront:v1` | storefront |
+| checkout-api | `checkout-api:v1` | checkout-api |
+| admin-console | `admin-console:v1` | admin-console |
 
-## Learning path (read in order)
-
-1. [docs/architecture/overview.md](docs/architecture/overview.md) — big picture
-2. [docs/adr/0001-gitops-with-argocd-and-helm.md](docs/adr/0001-gitops-with-argocd-and-helm.md) — why Helm + Argo
-3. [docs/adr/0002-app-of-apps-pattern.md](docs/adr/0002-app-of-apps-pattern.md) — why a root app
-4. [docs/adr/0003-environment-bootstrap-charts.md](docs/adr/0003-environment-bootstrap-charts.md) — why bootstrap charts
-5. [docs/onboarding/local-kind-gitops.md](docs/onboarding/local-kind-gitops.md) — hands-on commands
-6. [AGENTS.md](AGENTS.md) — how to work in this repo (humans + agents)
-
-## Repository layout
-
-```text
-app/                              Application (HTML + Dockerfile)
-charts/nginx-app/                 App Helm chart (+ values-nonprod / values-prod)
-bootstrapping_nonprod/            Env bootstrap Helm chart (AppProject + Namespace)
-bootstrapping_prod/               Prod bootstrap Helm chart (learning stub)
-argocd/nonprod/
-  app-of-apps/root.yaml           Kind bootstrap root Application
-  applications/                   bootstrapping-nonprod + nginx-app
-argocd/prod/                      Prod mirror (do not apply on Kind by default)
-docs/                             Architecture, onboarding, ADRs
-REPORT.md                         Earlier rolling-update assignment notes
-```
-
-## Quick deploy (Kind `dev-cluster`)
-
-Prerequisites: Colima/Docker, Kind cluster `dev-cluster`, Argo CD in namespace `argocd`, `kubectl` context `kind-dev-cluster`.
+## Quick start
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
-kubectl config use-context kind-dev-cluster
+# 1) Clusters (if needed)
+kind create cluster --name non-prod-cluster
+kind create cluster --name prod-cluster
 
-# 1) Build image (from app/ context)
-docker build --build-arg VERSION=v1 -t nginx-app:v1 app/
+# 2) Build + load images into BOTH clusters
+for app in storefront checkout-api admin-console; do
+  docker build -t ${app}:v1 apps/${app}
+  kind load docker-image ${app}:v1 --name non-prod-cluster
+  kind load docker-image ${app}:v1 --name prod-cluster
+done
 
-# 2) Make image visible to Kind (no registry)
-kind load docker-image nginx-app:v1 --name dev-cluster
+# 3) Install Argo CD (after loading images if registry pulls fail)
+./scripts/install-argocd.sh kind-non-prod-cluster
+./scripts/install-argocd.sh kind-prod-cluster
 
-# 3) Ensure latest manifests are on GitHub
-git push origin HEAD
+# 4) Push this repo, then apply roots
+kubectl --context kind-non-prod-cluster apply -f argocd/nonprod/app-of-apps/root.yaml
+kubectl --context kind-prod-cluster apply -f argocd/prod/app-of-apps/root.yaml
 
-# 4) Bootstrap App-of-Apps (once)
-kubectl apply -f argocd/nonprod/app-of-apps/root.yaml
-
-# 5) Verify
-kubectl -n argocd get applications
-kubectl -n nginx-app get deploy,pods,svc -o wide
-kubectl -n nginx-app port-forward svc/nginx-app 8080:80
-# http://localhost:8080 → "NGINX Application — Version 1"
+# 5) UI (example: nonprod)
+kubectl --context kind-non-prod-cluster -n argocd port-forward svc/argocd-server 8080:443
 ```
 
-### Argo CD UI on localhost
+See [docs/onboarding/local-kind-gitops.md](docs/onboarding/local-kind-gitops.md).
 
-```bash
-kubectl config use-context kind-dev-cluster
-kubectl -n argocd port-forward svc/argocd-server 8443:443
-```
+## Onboard another app
 
-Open **https://localhost:8443** (accept the self-signed cert warning).
-
-- Username: `admin`
-- Password: from the initial secret:
-
-```bash
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo
-```
-
-In the UI you should see the root plus several children as **Synced / Healthy**:
-
-- `nginx-gitops-root` (App-of-Apps)
-- `bootstrapping-nonprod`
-- `nginx-app`, `catalog-ui`, `payments-api`, `ops-portal`
-
-That multi-app list is the production-style feel of App-of-Apps.
-
-### Helm study (local, optional CLI)
-
-```bash
-# Install helm if needed, then:
-helm lint charts/nginx-app
-helm template nginx-app charts/nginx-app -f charts/nginx-app/values-nonprod.yaml
-```
-
-Change `replicaCount` in `charts/nginx-app/values-nonprod.yaml`, push, and watch Argo CD sync — that is the core GitOps loop.
-
-## Private GitHub repo
-
-If Argo CD cannot clone the repo, create a repository secret in `argocd` (PAT or SSH). Steps are in [docs/onboarding/local-kind-gitops.md](docs/onboarding/local-kind-gitops.md). Never commit credentials.
-
-## Image access
-
-Pods use `image: nginx-app:v1` with `imagePullPolicy: IfNotPresent`. If you see pull errors, re-run `kind load`. This lab does not use a remote registry.
-
-## Earlier assignment
-
-Rolling updates, scaling, and report answers remain in [REPORT.md](REPORT.md).
+1. Add `apps/<name>/` (Dockerfile + content)
+2. Add `charts/webapp/values-<name>.yaml`
+3. Append an entry to `applications:` in `bootstrapping_nonprod/values.yaml` and `bootstrapping_prod/values.yaml`
+4. Build/load the image; push Git; Argo syncs new Application CRs automatically

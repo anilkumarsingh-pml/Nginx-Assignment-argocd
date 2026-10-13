@@ -1,13 +1,12 @@
-{{- range .Values.namespaces }}
+{{- range .Values.applications }}
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ .name }}
+  name: {{ .namespace }}
   labels:
-    app.kubernetes.io/name: {{ include "bootstrapping-nonprod.name" $ }}
-    app.kubernetes.io/part-of: nginx-gitops
-    environment: nonprod
+    app.kubernetes.io/part-of: platform-gitops
+    environment: {{ $.Values.environment }}
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 {{- end }}

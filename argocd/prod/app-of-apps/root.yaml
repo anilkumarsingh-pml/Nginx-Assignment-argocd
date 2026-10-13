@@ -1,10 +1,9 @@
-# PROD root App-of-Apps — learning stub for env parity.
-# Do NOT apply this on the Kind learning cluster unless you intentionally want prod resources.
-# Kind lab bootstrap: kubectl apply -f argocd/nonprod/app-of-apps/root.yaml
+# Apply on prod-cluster after Argo CD is installed:
+#   kubectl --context kind-prod-cluster apply -f argocd/prod/app-of-apps/root.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nginx-gitops-root-prod
+  name: root-prod
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -13,10 +12,7 @@ spec:
   source:
     repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
     targetRevision: HEAD
-    path: argocd/prod
-    directory:
-      recurse: true
-      exclude: '{app-of-apps/*,README.md}'
+    path: bootstrapping_prod
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -24,3 +20,6 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

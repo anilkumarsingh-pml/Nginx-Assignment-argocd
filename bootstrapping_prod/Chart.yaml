@@ -1,8 +1,8 @@
 apiVersion: v2
 name: bootstrapping-prod
 description: >
-  Environment bootstrap for prod (learning stub). Same pattern as
-  bootstrapping_nonprod — not applied to the Kind learning cluster by default.
+  Prod environment bootstrap. Renders AppProject, namespaces, and
+  Argo CD Application CRs (Helm-generated) for every onboarded app.
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "1.0"

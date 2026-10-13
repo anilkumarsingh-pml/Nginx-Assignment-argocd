@@ -1,0 +1,4 @@
+# Nonprod env overlay (fewer replicas for Kind).
+replicaCount: 1
+image:
+  pullPolicy: IfNotPresent

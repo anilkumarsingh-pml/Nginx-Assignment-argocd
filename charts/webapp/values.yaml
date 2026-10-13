@@ -1,0 +1,23 @@
+# Shared baseline for all apps. Per-app + env overlays override these.
+
+nameOverride: ""
+fullnameOverride: ""
+appLabel: webapp
+
+replicaCount: 1
+
+image:
+  repository: webapp
+  tag: v1
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%

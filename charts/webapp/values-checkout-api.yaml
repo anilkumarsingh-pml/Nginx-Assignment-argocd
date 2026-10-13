@@ -1,0 +1,5 @@
+fullnameOverride: checkout-api
+appLabel: checkout-api
+image:
+  repository: checkout-api
+  tag: v1
