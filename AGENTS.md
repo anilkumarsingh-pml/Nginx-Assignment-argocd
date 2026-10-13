@@ -13,7 +13,6 @@ Learning GitOps monorepo: multi-app sources, a shared Helm chart, environment bo
 | `argocd/nonprod/app-of-apps/` | Root Application for `non-prod-cluster` |
 | `argocd/prod/app-of-apps/` | Root Application for `prod-cluster` |
 | `docs/` | Architecture, onboarding, ADRs |
-| `scripts/` | Lab helpers (image transfer, cluster bootstrap) |
 
 ## Kind clusters
 
@@ -33,7 +32,7 @@ Do not put this project's workloads on an unrelated `dev-cluster`.
 
 - Onboard a new app by adding `apps/<name>/`, a `values-<name>.yaml` under `charts/webapp/`, and an entry under `applications:` in **both** bootstrap `values.yaml` files.
 - Run `helm lint` / `helm template` on bootstrap + webapp charts before pushing.
-- Load images into each Kind cluster (`kind load` or `scripts/transfer-images.sh`); there is no registry in this lab.
+- Load images into each Kind cluster with `kind load docker-image` (or `docker save \| ctr import` if `kind load` fails on digests). There is no registry in this lab.
 - Bootstrap **both** env clusters when demonstrating prod parity.
 
 ## Do not
@@ -45,8 +44,8 @@ Do not put this project's workloads on an unrelated `dev-cluster`.
 ## Bootstrap order
 
 1. Push to `https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git`
-2. Build app images; `kind load` into `non-prod-cluster` and `prod-cluster`
-3. Install Argo CD in both clusters (load quay/ghcr images if pulls fail)
+2. Build app images; load into `non-prod-cluster` and `prod-cluster`
+3. Install Argo CD in both clusters (pre-load quay/ghcr images if pulls fail / Zscaler TLS)
 4. `kubectl --context kind-non-prod-cluster apply -f argocd/nonprod/app-of-apps/root.yaml`
 5. `kubectl --context kind-prod-cluster apply -f argocd/prod/app-of-apps/root.yaml`
 6. Port-forward Argo CD and verify Applications Synced/Healthy

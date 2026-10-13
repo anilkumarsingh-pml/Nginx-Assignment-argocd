@@ -6,12 +6,18 @@ Accepted
 
 ## Context
 
-Managing many Applications imperatively does not scale and hides the bootstrap order.
+Managing many Applications imperatively does not scale and hides bootstrap order (project/namespaces before workloads).
 
 ## Decision
 
-A root Application per environment points at the bootstrap Helm chart. The chart generates child Application CRs (wave 1) after AppProject/namespaces (wave 0).
+A **root Application** per environment (`root-nonprod` / `root-prod`) points at the matching bootstrap Helm chart. The chart renders:
+
+- Wave 0: AppProject + namespaces
+- Wave 1: child Application CRs for each onboarded app
+
+Roots live under `argocd/{nonprod|prod}/app-of-apps/` and are applied once with `kubectl apply`.
 
 ## Consequences
 
-Applying one root YAML bootstraps the whole env. Child apps are pruned when removed from bootstrap values.
+- Applying one root YAML bootstraps the whole environment.
+- Removing an app from bootstrap `applications:` prunes its Application (and workloads) when prune is enabled.

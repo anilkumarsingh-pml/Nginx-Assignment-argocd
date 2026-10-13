@@ -6,19 +6,19 @@ Accepted
 
 ## Context
 
-Hand-written Argo CD Application manifests per app under `argocd/*/applications/` duplicate fields and drift between nonprod and prod.
+Hand-written Argo CD Application manifests under `argocd/*/applications/` duplicate fields and drift between nonprod and prod.
 
 ## Decision
 
-Environment bootstrap Helm charts (`bootstrapping_nonprod`, `bootstrapping_prod`) template:
+Bootstrap charts template from `values.yaml` → `applications:`:
 
 1. AppProject (single tenant)
 2. Target namespaces
-3. One `Application` CR per entry in `values.yaml` → `applications`
+3. One `Application` CR per app (Helm `valueFiles` for app + env overlays)
 
-Root App-of-Apps points only at the bootstrap chart path.
+Do **not** add per-app Application YAML files under `argocd/`. Roots point only at the bootstrap chart path.
 
 ## Consequences
 
-- Onboarding a service is a values + chart overlay change, not a new Application YAML file.
-- Nonprod/prod stay structurally parallel; only env overlays and project names differ.
+- Onboarding is: `apps/<name>/` + `values-<name>.yaml` + bootstrap values entry + image load + Git push.
+- Nonprod/prod stay structurally parallel; only overlays and project names differ.
