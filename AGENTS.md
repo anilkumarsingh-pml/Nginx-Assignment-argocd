@@ -35,7 +35,7 @@ This repository is a **learning GitOps monorepo** for a DevOps intern: NGINX app
 - Reinstall or modify the Argo CD installation in namespace `argocd` unless a human explicitly asks.
 - Invent health probes, env vars, or registry credentials that the app does not use.
 - Point Argo CD at a different `repoURL` without updating all Application manifests consistently.
-- Apply `argocd/prod/app-of-apps/root.yaml` on the learning cluster without explaining it will create a second environment.
+- Apply `argocd/prod/app-of-apps/root.yaml` on the Kind `dev-cluster` (prod stays Git-only structure for this lab).
 
 ## Bootstrap order (humans + agents)
 

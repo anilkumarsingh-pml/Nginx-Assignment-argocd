@@ -10,16 +10,13 @@ Mirrors `argocd/nonprod` so you practice **environment parity** (same pattern as
 
 ## Kind lab
 
-Only apply nonprod:
+**Use nonprod only** on `dev-cluster`:
 
 ```bash
 kubectl apply -f argocd/nonprod/app-of-apps/root.yaml
 ```
 
-Optional (creates prod AppProject + second nginx Deployment):
+Do **not** apply this prod root on the Kind learning cluster.  
+`argocd/prod` + `bootstrapping_prod` exist for **structure / learning parity** (how a second environment would look in Git).
 
-```bash
-kubectl apply -f argocd/prod/app-of-apps/root.yaml
-```
-
-Use that only when you want to see two environments side by side on the same Kind cluster.
+A second Kind cluster for prod was attempted but skipped: Argo CD images could not be pulled/loaded reliably in this network environment. In a real company setup you would have separate nonprod and prod clusters (or accounts), each with its own Argo CD (or one hub Argo managing both).
