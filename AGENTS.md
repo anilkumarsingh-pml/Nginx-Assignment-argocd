@@ -42,7 +42,7 @@ This repository is a **learning GitOps monorepo** for a DevOps intern: NGINX app
 1. Push this repo to GitHub: `https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git`
 2. Build and `kind load` `nginx-app:v1` into `dev-cluster`
 3. `kubectl apply -f argocd/nonprod/app-of-apps/root.yaml`
-4. Verify Applications Synced/Healthy (`bootstrapping-nonprod`, `nginx-app`) and port-forward the Service
+4. Verify Applications Synced/Healthy (`bootstrapping-nonprod`, plus workload apps) and port-forward a Service
 
 Details: [docs/onboarding/local-kind-gitops.md](docs/onboarding/local-kind-gitops.md)
 

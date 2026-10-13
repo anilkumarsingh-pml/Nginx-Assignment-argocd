@@ -4,13 +4,22 @@ repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
 
 appProject:
   name: learning-nonprod
-  description: Learning project for NGINX GitOps on Kind (nonprod)
+  description: Learning project for multi-app GitOps on Kind (nonprod)
   destinations:
     - namespace: nginx-app
+      server: https://kubernetes.default.svc
+    - namespace: catalog-ui
+      server: https://kubernetes.default.svc
+    - namespace: payments-api
+      server: https://kubernetes.default.svc
+    - namespace: ops-portal
       server: https://kubernetes.default.svc
     - namespace: argocd
       server: https://kubernetes.default.svc
 
-namespace:
-  create: true
-  name: nginx-app
+# Namespaces created before child Applications sync (wave 0).
+namespaces:
+  - name: nginx-app
+  - name: catalog-ui
+  - name: payments-api
+  - name: ops-portal

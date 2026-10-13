@@ -77,7 +77,13 @@ Open **https://localhost:8443** (accept the self-signed cert warning).
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo
 ```
 
-In the UI you should see `nginx-gitops-root`, `bootstrapping-nonprod`, and `nginx-app` as **Synced / Healthy**.
+In the UI you should see the root plus several children as **Synced / Healthy**:
+
+- `nginx-gitops-root` (App-of-Apps)
+- `bootstrapping-nonprod`
+- `nginx-app`, `catalog-ui`, `payments-api`, `ops-portal`
+
+That multi-app list is the production-style feel of App-of-Apps.
 
 ### Helm study (local, optional CLI)
 

@@ -17,12 +17,15 @@ GitHub (Nginx-Assignment-argocd)
                                      └─────────┬───────────────────┘
                     wave 0                     │            wave 1
                                                ▼
-                          ┌────────────────────────┐   ┌────────────────────┐
-                          │ bootstrapping_nonprod  │   │ charts/nginx-app   │
-                          │ → AppProject           │   │ → Deploy + Service │
-                          │ → Namespace nginx-app  │   │ namespace nginx-app│
-                          └────────────────────────┘   └────────────────────┘
+                          ┌────────────────────────┐   ┌─────────────────────────────┐
+                          │ bootstrapping_nonprod  │   │ charts/nginx-app (x4 apps)  │
+                          │ → AppProject           │   │ nginx-app / catalog-ui /    │
+                          │ → Namespaces (x4)      │   │ payments-api / ops-portal   │
+                          └────────────────────────┘   └─────────────────────────────┘
 ```
+
+Each child Application is a separate Argo CD app (own sync/health/history), which is how multi-service platforms feel in the UI.
+
 
 1. **`app/`** — immutable container image content (HTML served by NGINX).
 2. **`bootstrapping_nonprod/`** (and stub `bootstrapping_prod/`) — environment Helm charts (AppProject + Namespace) that run **before** app charts.
