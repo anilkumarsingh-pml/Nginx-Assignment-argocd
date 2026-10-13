@@ -58,6 +58,24 @@ kubectl -n nginx-app port-forward svc/nginx-app 8080:80
 # http://localhost:8080 → "NGINX Application — Version 1"
 ```
 
+### Argo CD UI on localhost
+
+```bash
+kubectl config use-context kind-dev-cluster
+kubectl -n argocd port-forward svc/argocd-server 8443:443
+```
+
+Open **https://localhost:8443** (accept the self-signed cert warning).
+
+- Username: `admin`
+- Password: from the initial secret:
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo
+```
+
+In the UI you should see Applications `nginx-gitops-root` and `nginx-app` as **Synced / Healthy**.
+
 ### Helm study (local, optional CLI)
 
 ```bash
