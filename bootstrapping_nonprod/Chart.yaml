@@ -1,0 +1,8 @@
+apiVersion: v2
+name: bootstrapping-nonprod
+description: >
+  Environment bootstrap for nonprod/learning. Renders shared platform
+  resources (AppProject, target Namespace) before application charts sync.
+type: application
+version: 0.1.0
+appVersion: "1.0"

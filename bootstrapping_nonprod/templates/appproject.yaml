@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ .Values.appProject.name }}
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: {{ include "bootstrapping-nonprod.name" . }}
+    app.kubernetes.io/part-of: nginx-gitops
+    environment: nonprod
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: {{ .Values.appProject.description | quote }}
+  sourceRepos:
+    - {{ .Values.repoURL | quote }}
+  destinations:
+    {{- toYaml .Values.appProject.destinations | nindent 4 }}
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

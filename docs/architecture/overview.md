@@ -10,23 +10,25 @@ Deploy the NGINX learning app to a local Kind cluster (`dev-cluster`) using **He
 GitHub (Nginx-Assignment-argocd)
         │
         ▼
-┌───────────────────┐     syncs      ┌────────────────────┐
-│ nginx-gitops-root │ ─────────────► │ AppProject +       │
-│ (App-of-Apps)     │                │ Application YAML   │
-└───────────────────┘                └─────────┬──────────┘
-                                               │ renders Helm
+┌───────────────────┐     syncs      ┌─────────────────────────────┐
+│ nginx-gitops-root │ ─────────────► │ Applications:              │
+│ (App-of-Apps)     │                │  bootstrapping-nonprod     │
+└───────────────────┘                │  nginx-app                 │
+                                     └─────────┬───────────────────┘
+                    wave 0                     │            wave 1
                                                ▼
-                                     ┌────────────────────┐
-                                     │ charts/nginx-app   │
-                                     │ → Deploy + Service │
-                                     │ namespace nginx-app│
-                                     └────────────────────┘
+                          ┌────────────────────────┐   ┌────────────────────┐
+                          │ bootstrapping_nonprod  │   │ charts/nginx-app   │
+                          │ → AppProject           │   │ → Deploy + Service │
+                          │ → Namespace nginx-app  │   │ namespace nginx-app│
+                          └────────────────────────┘   └────────────────────┘
 ```
 
 1. **`app/`** — immutable container image content (HTML served by NGINX).
-2. **`charts/nginx-app`** — Helm chart turns values into Deployment + Service YAML.
-3. **`argocd/nonprod`** — declares *what* Argo should manage (project + apps).
-4. **Kind node** — must already have `nginx-app:v1` via `kind load` (`IfNotPresent`).
+2. **`bootstrapping_nonprod/`** (and stub `bootstrapping_prod/`) — environment Helm charts (AppProject + Namespace) that run **before** app charts.
+3. **`charts/nginx-app`** — application Helm chart (Deployment + Service).
+4. **`argocd/nonprod`** — App-of-Apps + Applications for Kind; **`argocd/prod`** mirrors the pattern for learning.
+5. **Kind node** — must already have `nginx-app:v1` via `kind load` (`IfNotPresent`).
 
 ## Why this shape (inspired by larger platforms)
 

@@ -57,10 +57,12 @@ kubectl config use-context kind-dev-cluster
 kubectl apply -f argocd/nonprod/app-of-apps/root.yaml
 ```
 
-This creates Application `nginx-gitops-root`, which syncs:
+This creates Application `nginx-gitops-root`, which syncs child Applications:
 
-- `AppProject/learning-nonprod`
-- `Application/nginx-app` (Helm → namespace `nginx-app`)
+- `bootstrapping-nonprod` → Helm `bootstrapping_nonprod/` (AppProject + Namespace)
+- `nginx-app` → Helm `charts/nginx-app` + `values-nonprod.yaml`
+
+Prod parity exists under `argocd/prod/` + `bootstrapping_prod/` but is **not** applied in the Kind lab by default.
 
 ## 5. Verify
 

@@ -8,27 +8,30 @@ Learning GitOps repo for the DevOps training track:
 
 Remote: [anilkumarsingh-pml/Nginx-Assignment-argocd](https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd)
 
-Inspired by multi-env App-of-Apps layouts, scaled down to **one app** and **nonprod** so you can learn the pattern clearly.
+Inspired by multi-env layouts (`bootstrapping_nonprod` / `bootstrapping_prod` + App-of-Apps), with **one app** and Kind focused on **nonprod**.
 
 ## Learning path (read in order)
 
 1. [docs/architecture/overview.md](docs/architecture/overview.md) — big picture
 2. [docs/adr/0001-gitops-with-argocd-and-helm.md](docs/adr/0001-gitops-with-argocd-and-helm.md) — why Helm + Argo
 3. [docs/adr/0002-app-of-apps-pattern.md](docs/adr/0002-app-of-apps-pattern.md) — why a root app
-4. [docs/onboarding/local-kind-gitops.md](docs/onboarding/local-kind-gitops.md) — hands-on commands
-5. [AGENTS.md](AGENTS.md) — how to work in this repo (humans + agents)
+4. [docs/adr/0003-environment-bootstrap-charts.md](docs/adr/0003-environment-bootstrap-charts.md) — why bootstrap charts
+5. [docs/onboarding/local-kind-gitops.md](docs/onboarding/local-kind-gitops.md) — hands-on commands
+6. [AGENTS.md](AGENTS.md) — how to work in this repo (humans + agents)
 
 ## Repository layout
 
 ```text
-app/                         Application (HTML + Dockerfile)
-charts/nginx-app/            Helm chart (Deployment + Service)
+app/                              Application (HTML + Dockerfile)
+charts/nginx-app/                 App Helm chart (+ values-nonprod / values-prod)
+bootstrapping_nonprod/            Env bootstrap Helm chart (AppProject + Namespace)
+bootstrapping_prod/               Prod bootstrap Helm chart (learning stub)
 argocd/nonprod/
-  app-of-apps/root.yaml      Bootstrap root Application
-  app-projects/              AppProject guardrails
-  applications/              Child Application (Helm)
-docs/                        Architecture, onboarding, ADRs
-REPORT.md                    Earlier rolling-update assignment notes
+  app-of-apps/root.yaml           Kind bootstrap root Application
+  applications/                   bootstrapping-nonprod + nginx-app
+argocd/prod/                      Prod mirror (do not apply on Kind by default)
+docs/                             Architecture, onboarding, ADRs
+REPORT.md                         Earlier rolling-update assignment notes
 ```
 
 ## Quick deploy (Kind `dev-cluster`)
@@ -74,7 +77,7 @@ Open **https://localhost:8443** (accept the self-signed cert warning).
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo
 ```
 
-In the UI you should see Applications `nginx-gitops-root` and `nginx-app` as **Synced / Healthy**.
+In the UI you should see `nginx-gitops-root`, `bootstrapping-nonprod`, and `nginx-app` as **Synced / Healthy**.
 
 ### Helm study (local, optional CLI)
 

@@ -1,0 +1,16 @@
+# Nonprod bootstrap defaults (Kind / learning).
+
+repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+
+appProject:
+  name: learning-nonprod
+  description: Learning project for NGINX GitOps on Kind (nonprod)
+  destinations:
+    - namespace: nginx-app
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+
+namespace:
+  create: true
+  name: nginx-app

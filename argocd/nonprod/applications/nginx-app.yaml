@@ -5,6 +5,7 @@ metadata:
   name: nginx-app
   namespace: argocd
   annotations:
+    # After bootstrapping-nonprod (wave 0) creates AppProject + Namespace
     argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io

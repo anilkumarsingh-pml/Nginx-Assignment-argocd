@@ -1,0 +1,12 @@
+{{- if .Values.namespace.create }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace.name }}
+  labels:
+    app.kubernetes.io/name: {{ include "bootstrapping-nonprod.name" . }}
+    app.kubernetes.io/part-of: nginx-gitops
+    environment: nonprod
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+{{- end }}

@@ -1,0 +1,28 @@
+# Prod child Application — same chart, values-prod.yaml, namespace nginx-app-prod.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-app-prod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: learning-prod
+  source:
+    repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+    targetRevision: HEAD
+    path: charts/nginx-app
+    helm:
+      valueFiles:
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nginx-app-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

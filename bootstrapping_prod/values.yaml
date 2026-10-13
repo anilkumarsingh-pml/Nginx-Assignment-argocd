@@ -1,0 +1,17 @@
+# Prod bootstrap defaults (structure parity / future use).
+# Kind lab uses nonprod only — see argocd/prod/README.md.
+
+repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+
+appProject:
+  name: learning-prod
+  description: Learning project for NGINX GitOps (prod stub)
+  destinations:
+    - namespace: nginx-app-prod
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+
+namespace:
+  create: true
+  name: nginx-app-prod

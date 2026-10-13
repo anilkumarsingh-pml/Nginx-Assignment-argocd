@@ -1,0 +1,26 @@
+# Deploys bootstrapping_nonprod Helm chart (AppProject + Namespace) before apps.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bootstrapping-nonprod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Uses default so it can create learning-nonprod before that project exists.
+  project: default
+  source:
+    repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+    targetRevision: HEAD
+    path: bootstrapping_nonprod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
