@@ -1,57 +1,57 @@
 # AGENTS.md — working in this repo
 
-Learning GitOps monorepo: multi-app sources, a shared Helm chart, environment bootstrap charts that **Helm-generate Argo CD Applications**, and thin App-of-Apps roots for Kind nonprod + prod.
+Learning GitOps monorepo shaped like PML `pml-argocd`: shared `docs/`, one tenant folder `platform/` (analogue of `mfv2/`), Helm-generated Applications, dual Kind clusters.
 
 ## Repo map
 
 | Path | Purpose |
 |------|---------|
-| `apps/` | Application sources (`storefront`, `checkout-api`, `admin-console`) |
-| `charts/webapp/` | Shared Deployment + Service chart + per-app / env values |
-| `bootstrapping_nonprod/` | Nonprod bootstrap: AppProject + namespaces + Application CRs |
-| `bootstrapping_prod/` | Prod bootstrap (same pattern, prod values) |
-| `argocd/nonprod/app-of-apps/` | Root Application for `non-prod-cluster` |
-| `argocd/prod/app-of-apps/` | Root Application for `prod-cluster` |
-| `docs/` | Architecture, onboarding, ADRs |
+| `apps/` | Demo app sources (stand-in for separate product repos) |
+| `platform/` | **The tenant** — deployable roots, bootstrap, env trees |
+| `platform/argocd-deployable/` | Apply-once root Applications (nonprod/prod overlays) |
+| `platform/bootstrapping_nonprod/` | Root Helm: generates layer Applications |
+| `platform/bootstrapping_prod/` | Same for prod |
+| `platform/nonprod/project-platform/` | AppProjects + apps App-of-Apps (nonprod) |
+| `platform/prod/project-platform/` | AppProjects + apps App-of-Apps + `app-helm-chart/webapp` |
+| `docs/` | Architecture, onboarding, ADRs (`architecture/decisions/`) |
 
 ## Kind clusters
 
-| Cluster | Role |
-|---------|------|
-| `non-prod-cluster` | Nonprod Argo CD + apps |
-| `prod-cluster` | Prod Argo CD + apps |
+| Cluster | Root apply |
+|---------|------------|
+| `non-prod-cluster` | `platform/argocd-deployable/overlays/nonprod/root_app/bootstrapping-apps.yaml` |
+| `prod-cluster` | `platform/argocd-deployable/overlays/prod/root_app/bootstrapping-apps.yaml` |
 
 Do not put this project's workloads on an unrelated `dev-cluster`.
 
 ## Source of truth
 
-- Git is the source of truth. Change charts / bootstrap values / roots, push, let Argo sync.
+- Git is the source of truth. Change charts / bootstrap / app-of-apps values, push, let Argo sync.
 - Do not treat `kubectl edit` as permanent (`selfHeal` reverts drift).
 
 ## Do
 
-- Onboard a new app by adding `apps/<name>/`, a `values-<name>.yaml` under `charts/webapp/`, and an entry under `applications:` in **both** bootstrap `values.yaml` files.
-- Run `helm lint` / `helm template` on bootstrap + webapp charts before pushing.
-- Load images into each Kind cluster with `kind load docker-image` (or `docker save \| ctr import` if `kind load` fails on digests). There is no registry in this lab.
-- Bootstrap **both** env clusters when demonstrating prod parity.
+- Onboard a new app: add `apps/<name>/`, `values-<name>.yaml` under `app-helm-chart/webapp`, and an entry under `applications:` in **both** `platform/*/project-platform/app-of-apps/values.yaml` files.
+- Run `helm lint` / `helm template` on bootstrap + app-of-apps + webapp charts before pushing.
+- Load images into each Kind cluster (`kind load` or `docker save \| ctr import`). No registry in this lab.
+- Bootstrap **both** env clusters for prod parity.
 
 ## Do not
 
 - Commit secrets, tokens, kubeconfigs, or `.certs/`.
-- Hand-write one Application YAML per app under `argocd/*/applications/` — bootstrap Helm owns that.
-- Point Argo CD at a different `repoURL` without updating roots + both bootstrap values consistently.
+- Hand-write workload Application YAMLs — `app-of-apps` Helm owns those.
+- Point roots at a different `repoURL` without updating deployable + bootstrap + app-of-apps values consistently.
 
 ## Bootstrap order
 
 1. Push to `https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git`
-2. Build app images; load into `non-prod-cluster` and `prod-cluster`
-3. Install Argo CD in both clusters (pre-load quay/ghcr images if pulls fail / Zscaler TLS)
-4. `kubectl --context kind-non-prod-cluster apply -f argocd/nonprod/app-of-apps/root.yaml`
-5. `kubectl --context kind-prod-cluster apply -f argocd/prod/app-of-apps/root.yaml`
-6. Port-forward Argo CD and verify Applications Synced/Healthy
+2. Build/load app images into both Kind clusters
+3. Install Argo CD on both clusters
+4. Apply nonprod + prod roots from `platform/argocd-deployable/overlays/*/root_app/`
+5. Verify Applications Synced/Healthy; port-forward UIs
 
-Details: [docs/onboarding/local-kind-gitops.md](docs/onboarding/local-kind-gitops.md)
+Details: [docs/onboarding/getting-started.md](docs/onboarding/getting-started.md)
 
 ## Agent behavior
 
-Explain why each GitOps/Helm piece exists. Prefer small, reviewable changes. Keep app HTML/behavior stable unless asked to change it.
+Explain why each GitOps/Helm layer exists (PML parity). Prefer small, reviewable changes. Keep app HTML stable unless asked to change it.

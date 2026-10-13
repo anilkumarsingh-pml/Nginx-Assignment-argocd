@@ -1,53 +1,54 @@
 # Architecture overview
 
-## Flow
+## Layout (PML-shaped)
 
 ```
-GitHub (source of truth)
+GitHub
+├── docs/                          # shared
+├── apps/                          # demo sources (≠ product repos, but same role)
+└── platform/                      # tenant (≈ mfv2/)
+    ├── argocd-deployable/overlays/{nonprod,prod}/root_app/
+    ├── bootstrapping_{nonprod,prod}/    # deployments[] → layer Applications
+    ├── nonprod/project-platform/
+    │   ├── infra-manifests/app-projects/
+    │   └── app-of-apps/                 # applications[] → workload Applications
+    └── prod/project-platform/
+        ├── infra-manifests/app-projects/
+        ├── app-of-apps/
+        └── app-helm-chart/webapp/
+```
+
+## Sync chain
+
+```
+root-nonprod / root-prod
         │
-        ├─ argocd/{nonprod|prod}/app-of-apps/root.yaml   ← applied once per cluster
-        │         │
-        │         ▼
-        ├─ bootstrapping_{nonprod|prod}/                 ← Helm chart
-        │         │  renders:
-        │         ├─ AppProject (one tenant)
-        │         ├─ Namespaces
-        │         └─ Application CRs (one per app in values)
-        │                   │
-        │                   ▼
-        └─ charts/webapp + apps/*                        ← Deployments + Services
+        ▼
+bootstrapping_*  (Helm)
+        │  deployments[]
+        ├─ platform-appprojects  → AppProject YAML
+        └─ platform-apps         → app-of-apps Helm chart
+                │  applications[]
+                ├─ storefront
+                ├─ checkout-api
+                └─ admin-console  → webapp chart
 ```
 
-## Clusters and Argo CD
+## Clusters
 
-| Kind cluster | Root Application | Bootstrap chart | AppProject | Typical UI port-forward |
-|--------------|------------------|-----------------|------------|-------------------------|
-| `non-prod-cluster` | `root-nonprod` | `bootstrapping_nonprod` | `platform-nonprod` | https://localhost:8080 |
-| `prod-cluster` | `root-prod` | `bootstrapping_prod` | `platform-prod` | https://localhost:8081 |
+| Kind cluster | Root YAML | Bootstrap | AppProject |
+|--------------|-----------|-----------|------------|
+| `non-prod-cluster` | `argocd-deployable/overlays/nonprod/...` | `bootstrapping_nonprod` | `platform-nonprod` |
+| `prod-cluster` | `argocd-deployable/overlays/prod/...` | `bootstrapping_prod` | `platform-prod` |
 
-Each cluster runs **its own Argo CD**. There is no shared control plane between envs. That is intentional: closer to real nonprod/prod separation than one Argo CD managing both.
+Each cluster runs its own Argo CD (two UIs when port-forwarded).
 
-Two UIs exist because there are two independent Argo CD installations — not because one cluster exposes two dashboards.
+## vs PML `mfv2/`
 
-## Applications (workloads)
-
-| App | Role (demo) | Chart overlays |
-|-----|-------------|----------------|
-| `storefront` | Customer-facing catalog page | `values-storefront.yaml` + env values |
-| `checkout-api` | Checkout / payments surface page | `values-checkout-api.yaml` + env values |
-| `admin-console` | Internal ops portal page | `values-admin-console.yaml` + env values |
-
-All three share `charts/webapp` (Deployment + Service). Content lives under `apps/<name>/`. Env scale differs: nonprod `replicaCount: 1`, prod `replicaCount: 2`.
-
-## Why Helm generates Applications
-
-Hand-maintaining one Application YAML per app does not scale and drifts between envs. Listing apps under `applications:` in bootstrap `values.yaml` and templating `Application` objects matches how platform teams onboard services: change values → push Git → Argo syncs → new Application appears.
-
-Root Applications must not recurse into themselves; they target only the bootstrap chart path.
-
-## Related ADRs
-
-- [0001 GitOps with Argo CD and Helm](../adr/0001-gitops-with-argocd-and-helm.md)
-- [0002 App-of-Apps pattern](../adr/0002-app-of-apps-pattern.md)
-- [0003 Environment bootstrap charts](../adr/0003-environment-bootstrap-charts.md)
-- [0004 Helm-generated Applications](../adr/0004-helm-generated-applications.md)
+| PML | This lab |
+|-----|----------|
+| `mfv2/` tenant | `platform/` |
+| Full `argocd-deployable` Kustomize install | Roots only; Argo installed from upstream |
+| infra-app-of-apps + large infra-manifests | AppProjects only under infra-manifests |
+| prod-app-of-apps + Kafka charts | app-of-apps → three webapps |
+| Many AppProjects / cross-repos | One AppProject per env, one repo |

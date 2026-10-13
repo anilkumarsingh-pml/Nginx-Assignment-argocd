@@ -1,0 +1,37 @@
+{{- range .Values.deployments }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .name }}
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: {{ include "bootstrapping-nonprod.name" $ }}
+    app.kubernetes.io/part-of: platform-gitops
+    environment: {{ $.Values.environment }}
+  annotations:
+    argocd.argoproj.io/sync-wave: {{ .wave | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ .project | default "default" }}
+  source:
+    repoURL: {{ $.Values.repoURL | quote }}
+    targetRevision: {{ $.Values.targetRevision | quote }}
+    path: {{ .path }}
+    {{- if .helm }}
+    helm:
+      valueFiles:
+        - values.yaml
+    {{- end }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .destinationNamespace | default "argocd" }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+{{- end }}

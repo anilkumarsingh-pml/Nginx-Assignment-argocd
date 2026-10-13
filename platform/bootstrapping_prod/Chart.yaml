@@ -1,0 +1,8 @@
+apiVersion: v2
+name: bootstrapping-prod
+description: >
+  Root App-of-Apps for the platform tenant (prod). Helm-generates
+  Application CRs for infra (AppProjects) and the apps App-of-Apps layer.
+type: application
+version: 0.3.0
+appVersion: "1.0"

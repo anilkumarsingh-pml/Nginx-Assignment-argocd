@@ -1,0 +1,6 @@
+apiVersion: v2
+name: platform-apps-prod
+description: Helm-generates Application CRs for platform workloads (prod)
+type: application
+version: 0.1.0
+appVersion: "1.0"

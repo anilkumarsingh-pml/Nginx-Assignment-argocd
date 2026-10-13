@@ -1,0 +1,18 @@
+# Root bootstrap for prod — lists layers (PML-style deployments), not individual apps.
+repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+targetRevision: HEAD
+environment: prod
+
+deployments:
+  - name: platform-appprojects
+    path: platform/prod/project-platform/infra-manifests/app-projects
+    helm: false
+    wave: "0"
+    destinationNamespace: argocd
+    project: default
+  - name: platform-apps
+    path: platform/prod/project-platform/app-of-apps
+    helm: true
+    wave: "1"
+    destinationNamespace: argocd
+    project: default

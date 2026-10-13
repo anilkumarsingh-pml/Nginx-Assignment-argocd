@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform-prod
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: platform-gitops
+    environment: prod
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: Single-tenant prod platform (Kind lab)
+  sourceRepos:
+    - https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+  destinations:
+    - namespace: storefront
+      server: https://kubernetes.default.svc
+    - namespace: checkout-api
+      server: https://kubernetes.default.svc
+    - namespace: admin-console
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
