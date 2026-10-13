@@ -1,0 +1,8 @@
+.certs/
+*.pem
+.DS_Store
+# Local agent / editor noise
+.cursor/
+*.swp
+# Evidence dumps are optional local lab artifacts
+evidence/

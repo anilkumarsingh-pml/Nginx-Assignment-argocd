@@ -1,0 +1,13 @@
+# Kind / local nonprod overrides.
+# Same chart as defaults; change values here instead of editing templates.
+
+replicaCount: 2
+
+image:
+  repository: nginx-app
+  tag: v1
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80

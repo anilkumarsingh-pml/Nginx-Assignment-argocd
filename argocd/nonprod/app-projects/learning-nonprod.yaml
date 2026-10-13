@@ -1,0 +1,23 @@
+# AppProject = guardrails for what Argo CD may deploy in nonprod/learning.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: learning-nonprod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  description: Learning project for NGINX GitOps on Kind (nonprod)
+  sourceRepos:
+    - https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+  destinations:
+    - namespace: nginx-app
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

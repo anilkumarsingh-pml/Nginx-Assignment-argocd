@@ -1,0 +1,26 @@
+# Bootstrap once: kubectl apply -f argocd/nonprod/app-of-apps/root.yaml
+# This root Application syncs AppProject + child Applications from Git (App-of-Apps).
+# Exclude this folder so the root Application is not managed by itself.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-gitops-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+    targetRevision: HEAD
+    path: argocd/nonprod
+    directory:
+      recurse: true
+      exclude: '{app-of-apps/*,README.md}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

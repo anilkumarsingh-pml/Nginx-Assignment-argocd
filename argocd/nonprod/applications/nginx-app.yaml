@@ -1,0 +1,28 @@
+# Child Application: deploys the Helm chart into namespace nginx-app.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-app
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: learning-nonprod
+  source:
+    repoURL: https://github.com/anilkumarsingh-pml/Nginx-Assignment-argocd.git
+    targetRevision: HEAD
+    path: charts/nginx-app
+    helm:
+      valueFiles:
+        - values-nonprod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nginx-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
